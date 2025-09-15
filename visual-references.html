@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Multi-Matrix Spy Plot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .matrix-input {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .matrix-input:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+        }
+        .matrix-input.active {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .matrix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .matrix-label {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 10px;
+            resize: vertical;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+        }
+        .add-matrix {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        .add-matrix:hover {
+            box-shadow: 0 8px 25px rgba(40,167,69,0.3);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        .example-note {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #2196f3;
+        }
+        .example-note h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        .example-code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌌 Multi-Matrix Spy Plot</h1>
+            <p>Visualize sparse matrices as constellation patterns</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <h3>Matrix Inputs</h3>
+                <div id="matrixInputs"></div>
+                
+                <div class="controls">
+                    <button class="add-matrix" onclick="addMatrix()">+ Add Matrix</button>
+                    <button onclick="plotMatrices()">🎯 Plot Spy Chart</button>
+                    <button onclick="clearAll()">🗑️ Clear All</button>
+                </div>
+                
+                <div class="example-note">
+                    <h4>📝 Input Format:</h4>
+                    <div class="example-code">
+                        [[1, 0, 3],<br>
+                         [0, 5, 0],<br>
+                         [2, 0, 4]]
+                    </div>
+                    <p><small>Enter matrices as 2D arrays. Use 0 for empty positions to create constellation patterns!</small></p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="spyPlotCanvas" width="600" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let chart;
+        let matrixCount = 0;
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+            '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D7DBDD'
+        ];
+        
+        function addMatrix() {
+            const container = document.getElementById('matrixInputs');
+            const matrixDiv = document.createElement('div');
+            matrixDiv.className = 'matrix-input';
+            matrixDiv.id = `matrix-${matrixCount}`;
+            
+            const colorIndex = matrixCount % colors.length;
+            const color = colors[colorIndex];
+            
+            matrixDiv.innerHTML = `
+                <div class="matrix-header">
+                    <span class="matrix-label">Matrix ${matrixCount + 1}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="color-indicator" style="background-color: ${color};"></div>
+                        <button class="delete-btn" onclick="deleteMatrix(${matrixCount})">Delete</button>
+                    </div>
+                </div>
+                <textarea placeholder="Enter matrix as 2D array, e.g.:
+[[1, 0, 3],
+ [0, 5, 0], 
+ [2, 0, 4]]" data-color="${color}" data-index="${matrixCount}"></textarea>
+            `;
+            
+            container.appendChild(matrixDiv);
+            matrixCount++;
+            
+            // Add example matrix for first input
+            if (matrixCount === 1) {
+                const textarea = matrixDiv.querySelector('textarea');
+                textarea.value = `[[12, 25, 38, 0, 57],
+ [64, 0, 33, 47, 0],
+ [0, 14, 22, 0, 49],
+ [17, 0, 31, 45, 53],
+ [73, 19, 0, 34, 0]]`;
+            }
+        }
+        
+        function deleteMatrix(index) {
+            const matrixDiv = document.getElementById(`matrix-${index}`);
+            if (matrixDiv) {
+                matrixDiv.remove();
+                plotMatrices(); // Refresh the plot
+            }
+        }
+        
+        function clearAll() {
+            document.getElementById('matrixInputs').innerHTML = '';
+            matrixCount = 0;
+            if (chart) {
+                chart.destroy();
+            }
+            addMatrix(); // Add one empty matrix
+        }
+        
+        function parseMatrix(matrixString) {
+            try {
+                // Clean up the input string
+                const cleaned = matrixString
+                    .trim()
+                    .replace(/\s+/g, ' ')
+                    .replace(/,\s*]/g, ']')
+                    .replace(/\[\s*/g, '[')
+                    .replace(/\s*\]/g, ']');
+                
+                return JSON.parse(cleaned);
+            } catch (e) {
+                console.error('Matrix parsing error:', e);
+                return null;
+            }
+        }
+        
+        function matrixToSpyData(matrix, color, label) {
+            const dataPoints = [];
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (matrix[i][j] !== 0) {
+                        dataPoints.push({ 
+                            x: j + 1, 
+                            y: rows - i, // Flip y-axis to match matrix layout
+                            value: matrix[i][j]
+                        });
+                    }
+                }
+            }
+            
+            return {
+                label: label,
+                data: dataPoints,
+                backgroundColor: color,
+                borderColor: color,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            };
+        }
+        
+        function plotMatrices() {
+            const matrixInputs = document.querySelectorAll('.matrix-input textarea');
+            const datasets = [];
+            let maxRows = 0, maxCols = 0;
+            
+            matrixInputs.forEach((textarea, index) => {
+                if (textarea.value.trim()) {
+                    const matrix = parseMatrix(textarea.value);
+                    if (matrix && matrix.length > 0) {
+                        const color = textarea.dataset.color;
+                        const label = `Matrix ${parseInt(textarea.dataset.index) + 1}`;
+                        const dataset = matrixToSpyData(matrix, color, label);
+                        datasets.push(dataset);
+                        
+                        maxRows = Math.max(maxRows, matrix.length);
+                        maxCols = Math.max(maxCols, matrix[0].length);
+                    }
+                }
+            });
+            
+            if (datasets.length === 0) {
+                alert('Please enter at least one valid matrix!');
+                return;
+            }
+            
+            // Destroy existing chart
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const ctx = document.getElementById('spyPlotCanvas').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: 0.5,
+                            max: maxCols + 0.5,
+                            ticks: { 
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) && value >= 1 && value <= maxCols ? value : '';
+                                }
+                            },
+                            title: { 
+                                display: true, 
+                                text: 'Column Index',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                lineWidth: 1
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            min: 0.5,
+                            max: maxRows + 0.5,
+                            ticks: { 
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) && value >= 1 && value <= maxRows ? value : '';
+                                }
+                            },
+                            title: { 
+                                display: true, 
+                                text: 'Row Index',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                lineWidth: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        title: { 
+                            display: true, 
+                            text: `Spy Plot - ${datasets.length} Matrix${datasets.length > 1 ? 'es' : ''}`,
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].dataset.label;
+                                },
+                                label: function(context) {
+                                    const col = context.parsed.x;
+                                    const row = maxRows - context.parsed.y + 1;
+                                    return `Position (${row}, ${col}) = ${context.raw.value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize with one matrix input
+        addMatrix();
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Matrix Surface Visualizer</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+        .matrix-input {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 5px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .matrix-input input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .matrix-input input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        #plot {
+            width: 80%;
+            height: 600px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        p {
+            font-size: 16px;
+            max-width: 600px;
+            text-align: center;
+            color: #555;
+            line-height: 1.5;
+        }
+        .instructions {
+            max-width: 600px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+            color: #666;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive 3D Matrix Surface Visualizer</h1>
+    <p>Explore the topography of your 5x5 matrix data. Enter values in the grid below to update the 3D surface plot dynamically. Rotate the plot to reveal peaks, valleys, ridges, plateaus, and saddle points.</p>
+    <div class="instructions">
+        <p><strong>What to Look For:</strong></p>
+        <ul>
+            <li><strong>Peaks:</strong> High points (e.g., 81) indicating clusters of high values.</li>
+            <li><strong>Valleys:</strong> Low points (e.g., 12) showing minima or low activity.</li>
+            <li><strong>Ridges:</strong> Elevated paths, like diagonals of high values.</li>
+            <li><strong>Plateaus:</strong> Flat areas of uniform value, indicating stability.</li>
+            <li><strong>Saddle Points:</strong> Areas high in one direction, low in another.</li>
+            <li><strong>Gradients:</strong> Steep slopes showing rapid value changes.</li>
+            <li><strong>Patterns:</strong> Look for symmetry, clusters, or jagged textures.</li>
+            <li><strong>Rotation:</strong> Click and drag to rotate the plot, revealing hidden features and true slopes.</li>
+        </ul>
+    </div>
+    <div class="matrix-input" id="matrix-input">
+        <!-- 5x5 input grid will be generated by JavaScript -->
+    </div>
+    <div id="plot"></div>
+
+    <script>
+        // Initialize the 5x5 matrix with the provided values
+        const initialMatrix = [
+            [12, 25, 38, 41, 57],
+            [64, 29, 33, 47, 52],
+            [81, 14, 22, 36, 49],
+            [17, 28, 31, 45, 53],
+            [73, 19, 27, 34, 48]
+        ];
+
+        // Create the input grid
+        const matrixInput = document.getElementById('matrix-input');
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 5; j++) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = initialMatrix[i][j];
+                input.dataset.row = i;
+                input.dataset.col = j;
+                input.addEventListener('input', updatePlot);
+                matrixInput.appendChild(input);
+            }
+        }
+
+        // Function to get the current matrix from inputs
+        function getMatrix() {
+            const matrix = Array(5).fill().map(() => Array(5).fill(0));
+            const inputs = document.querySelectorAll('.matrix-input input');
+            inputs.forEach(input => {
+                const row = parseInt(input.dataset.row);
+                const col = parseInt(input.dataset.col);
+                matrix[row][col] = parseFloat(input.value) || 0;
+            });
+            return matrix;
+        }
+
+        // Function to update the 3D surface plot
+        function updatePlot() {
+            const matrix = getMatrix();
+            const data = [{
+                z: matrix,
+                type: 'surface',
+                colorscale: 'Viridis',
+                showscale: true,
+                lighting: {
+                    ambient: 0.8,
+                    diffuse: 0.8,
+                    specular: 0.5,
+                    roughness: 0.7
+                },
+                lightposition: {
+                    x: 100,
+                    y: 100,
+                    z: 100
+                }
+            }];
+
+            const layout = {
+                title: {
+                    text: '3D Surface Plot of Matrix Values',
+                    font: { size: 18 }
+                },
+                scene: {
+                    xaxis: { 
+                        title: 'Column Index', 
+                        range: [0, 4],
+                        tickvals: [0, 1, 2, 3, 4]
+                    },
+                    yaxis: { 
+                        title: 'Row Index', 
+                        range: [0, 4],
+                        tickvals: [0, 1, 2, 3, 4]
+                    },
+                    zaxis: { title: 'Value' },
+                    camera: {
+                        eye: { x: 1.5, y: 1.5, z: 1 }
+                    }
+                },
+                margin: { l: 0, r: 0, b: 0, t: 50 },
+                width: 800,
+                height: 600
+            };
+
+            Plotly.newPlot('plot', data, layout);
+        }
+
+        // Initial plot
+        updatePlot();
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hinton Diagram</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f7fa;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: #ffffff;
+            border-radius: 5px;
+        }
+        .description {
+            max-width: 800px;
+            margin-top: 20px;
+            text-align: left;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #444;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hinton Diagram: Visualizing Value Magnitude and Sign</h1>
+    <div class="description">
+        <p><strong>Concept:</strong> A Hinton Diagram transforms matrix data into an intuitive grid of scaled squares, where both the size and vertical position of each square encode critical information about the underlying values. This visualization excels at revealing the distribution of magnitudes, the prevalence of positive vs. negative values, and identifying dominant elements within a matrix—making it particularly valuable for analyzing neural network weights, correlation matrices, or covariance structures.</p>
+        
+        <h2>Visual Structure:</h2>
+        <ul>
+            <li><strong>Foundation:</strong> A grid where each cell corresponds to a matrix element (rows on Y-axis, columns on X-axis).</li>
+            <li><strong>Glyph Design:</strong> Each cell contains a single square. The square's area represents the absolute value (magnitude) of the element, while its vertical position within the cell encodes the sign.</li>
+            <li><strong>Aesthetic:</strong> Resembles a minimalist mosaic. The grid provides clear spatial alignment, while varying sizes and positions create a visual hierarchy of importance and polarity.</li>
+        </ul>
+
+        <h2>Key Visual Cues:</h2>
+        <ul>
+            <li><strong>Square Size (Magnitude Encoding):</strong> The area of the square is proportional to the absolute value of the element. Larger squares indicate larger magnitudes, dominating the visual field, while smaller squares indicate negligible values.</li>
+            <li><strong>Square Position (Sign Encoding):</strong> Squares centered in the upper half of a cell represent positive values, while those in the lower half represent negative values. The cell's horizontal midline acts as the "zero" baseline.</li>
+            <li><strong>Color:</strong> Blue (#1e90ff) for positive values and red (#ff4040) for negative values reinforce the positional encoding. In this matrix, all values are positive, so all squares are blue and positioned in the top half.</li>
+        </ul>
+
+        <h2>What to Look For:</h2>
+        <ul>
+            <li><strong>Dominant Values & Outliers:</strong> Identify the largest squares (e.g., 81, 73, 64) as the most influential values. Small squares (e.g., 12, 14) indicate negligible values.</li>
+            <li><strong>Sign Distribution:</strong> This matrix is "top-heavy" with all positive values, indicating a positive skew. Look for balance or imbalance in other datasets.</li>
+            <li><strong>Magnitude Patterns:</strong> Check for gradients in square size across rows/columns (e.g., Row 3 has a large square at 81, then smaller ones). Look for alignments of large squares suggesting relationships.</li>
+            <li><strong>Matrix Structure:</strong> A few large squares (e.g., 81, 73) amidst smaller ones suggest a matrix driven by key elements. Check for block structures in larger datasets.</li>
+        </ul>
+
+        <h2>Why It Matters:</h2>
+        <p>This visualization is ideal for neural network analysis (e.g., identifying dominant weights), correlation inspection, optimization monitoring, and anomaly detection by highlighting magnitude and sign patterns efficiently.</p>
+    </div>
+    <script>
+        const matrix = [
+            [12, 25, 38, 41, 57],
+            [64, 29, 33, 47, 52],
+            [81, 14, 22, 36, 49],
+            [17, 28, 31, 45, 53],
+            [73, 19, 27, 34, 48]
+        ];
+
+        function setup() {
+            createCanvas(400, 400);
+            noLoop();
+        }
+
+        function draw() {
+            background(255);
+            const cellSize = 60;
+            const maxVal = Math.max(...matrix.flat().map(Math.abs));
+            const maxSquareSize = cellSize * 0.8;
+
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const value = matrix[i][j];
+                    const absValue = Math.abs(value);
+                    const squareSize = (absValue / maxVal) * maxSquareSize;
+                    const x = j * cellSize + cellSize / 2 + 50;
+                    const y = i * cellSize + (value >= 0 ? cellSize / 4 : 3 * cellSize / 4) + 50;
+                    fill(value >= 0 ? '#1e90ff' : '#ff4040'); // Blue for positive, red for negative
+                    noStroke();
+                    rectMode(CENTER);
+                    square(x, y, squareSize);
+
+                    // Draw cell borders
+                    noFill();
+                    stroke('#333');
+                    strokeWeight(1);
+                    rect(j * cellSize + 50, i * cellSize + 50, cellSize, cellSize);
+
+                    // Draw value text
+                    fill('#000080'); // Navy text for contrast
+                    textAlign(CENTER, CENTER);
+                    textSize(12);
+                    textStyle(BOLD);
+                    text(value, j * cellSize + cellSize / 2 + 50, i * cellSize + cellSize / 2 + 50);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singular Value Spectrum of the Matrix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1em;
+            color: #555;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Singular Value Spectrum of the Matrix</h1>
+    <p>This bar chart displays the singular values of the provided 5x5 matrix, sorted in descending order. The x-axis represents the singular value index, and the y-axis shows the magnitude. Observe the "knee" or gaps to assess the matrix's effective rank and dimensionality.</p>
+    <canvas id="spectralChart"></canvas>
+
+    <script>
+        // Define the input matrix
+        const matrix = [
+            [12, 25, 38, 41, 57],
+            [64, 29, 33, 47, 52],
+            [81, 14, 22, 36, 49],
+            [17, 28, 31, 45, 53],
+            [73, 19, 27, 34, 48]
+        ];
+
+        // Compute SVD using numeric.js
+        const svd = numeric.svd(matrix);
+        const singularValues = svd.S; // Singular values
+
+        // Prepare data for Chart.js
+        const labels = singularValues.map((_, i) => `${i + 1}`);
+        const data = {
+            labels: labels,
+            datasets: [{
+                label: 'Singular Values',
+                data: singularValues,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        // Configure and render the bar chart
+        const ctx = document.getElementById('spectralChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Singular Value Index',
+                            font: { size: 14 }
+                        },
+                        grid: { display: false }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Magnitude',
+                            font: { size: 14 }
+                        },
+                        beginAtZero: true,
+                        type: 'linear' // Use linear scale; logarithmic can be used for wide-ranging values
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Singular Value ${context.label}: ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Eigenvector/SVD Visualization</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .matrix-display {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px auto;
+            text-align: center;
+            max-width: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .visualization-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .plot-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            color: #333;
+        }
+        
+        .plot-title {
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        canvas {
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            background: white;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 120px;
+            margin: 0 10px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .eigenvalues, .analysis {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .visualization-container {
+                grid-template-columns: 1fr;
+            }
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Matrix Eigenvector/SVD Visualization</h1>
+        <p class="subtitle">Decoding the Geometric DNA of Linear Transformations</p>
+        
+        <div class="matrix-display">
+            <h3>Input Matrix A:</h3>
+            <pre>| 12  25  38  41  57 |
+| 64  29  33  47  52 |
+| 81  14  22  36  49 |
+| 17  28  31  45  53 |
+| 73  19  27  34  48 |</pre>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Animation Speed</label>
+                <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+                <span id="speedValue">1.0x</span>
+            </div>
+            <div class="control-group">
+                <label>Arrow Scale</label>
+                <input type="range" id="scaleSlider" min="0.5" max="3" step="0.1" value="1">
+                <span id="scaleValue">1.0x</span>
+            </div>
+            <button onclick="toggleAnimation()">Toggle Animation</button>
+            <button onclick="resetView()">Reset View</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Largest Singular Value</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span>Second Largest</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2ecc71;"></div>
+                <span>Smaller Values</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>Unit Circle</span>
+            </div>
+        </div>
+        
+        <div class="visualization-container">
+            <div class="plot-container">
+                <h3 class="plot-title">Original Space (Input)</h3>
+                <canvas id="originalCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="plot-container">
+                <h3 class="plot-title">Transformed Space (Output)</h3>
+                <canvas id="transformedCanvas" width="400" height="400"></canvas>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="eigenvalues">
+                <h3>SVD Analysis</h3>
+                <div id="svdInfo"></div>
+            </div>
+            <div class="analysis">
+                <h3>Geometric Properties</h3>
+                <div id="analysisInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix data
+        const matrix = [
+            [12, 25, 38, 41, 57],
+            [64, 29, 33, 47, 52],
+            [81, 14, 22, 36, 49],
+            [17, 28, 31, 45, 53],
+            [73, 19, 27, 34, 48]
+        ];
+        
+        // For visualization, we'll work with a 2x2 submatrix to make it geometrically interpretable
+        const subMatrix = [
+            [matrix[0][0], matrix[0][1]],
+            [matrix[1][0], matrix[1][1]]
+        ];
+        
+        // Animation variables
+        let animationRunning = true;
+        let animationSpeed = 1;
+        let arrowScale = 1;
+        let time = 0;
+        
+        // Canvas references
+        const originalCanvas = document.getElementById('originalCanvas');
+        const transformedCanvas = document.getElementById('transformedCanvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const transformedCtx = transformedCanvas.getContext('2d');
+        
+        // SVD calculation for 2x2 matrix
+        function calculateSVD2x2(A) {
+            const a = A[0][0], b = A[0][1], c = A[1][0], d = A[1][1];
+            
+            // Calculate A^T * A
+            const AtA = [
+                [a*a + c*c, a*b + c*d],
+                [a*b + c*d, b*b + d*d]
+            ];
+            
+            // Calculate eigenvalues of A^T * A
+            const trace = AtA[0][0] + AtA[1][1];
+            const det = AtA[0][0] * AtA[1][1] - AtA[0][1] * AtA[1][0];
+            const discriminant = trace * trace - 4 * det;
+            
+            if (discriminant < 0) return null;
+            
+            const lambda1 = (trace + Math.sqrt(discriminant)) / 2;
+            const lambda2 = (trace - Math.sqrt(discriminant)) / 2;
+            
+            const sigma1 = Math.sqrt(Math.max(0, lambda1));
+            const sigma2 = Math.sqrt(Math.max(0, lambda2));
+            
+            // Calculate corresponding eigenvectors (simplified)
+            let v1, v2;
+            
+            if (Math.abs(AtA[0][1]) > 1e-10) {
+                v1 = [AtA[0][1], lambda1 - AtA[0][0]];
+                v2 = [AtA[0][1], lambda2 - AtA[0][0]];
+            } else {
+                v1 = [1, 0];
+                v2 = [0, 1];
+            }
+            
+            // Normalize
+            const norm1 = Math.sqrt(v1[0]*v1[0] + v1[1]*v1[1]);
+            const norm2 = Math.sqrt(v2[0]*v2[0] + v2[1]*v2[1]);
+            
+            if (norm1 > 1e-10) {
+                v1[0] /= norm1;
+                v1[1] /= norm1;
+            }
+            if (norm2 > 1e-10) {
+                v2[0] /= norm2;
+                v2[1] /= norm2;
+            }
+            
+            // Calculate U vectors by transforming V vectors
+            const u1 = sigma1 > 1e-10 ? 
+                [(a*v1[0] + b*v1[1])/sigma1, (c*v1[0] + d*v1[1])/sigma1] : [1, 0];
+            const u2 = sigma2 > 1e-10 ? 
+                [(a*v2[0] + b*v2[1])/sigma2, (c*v2[0] + d*v2[1])/sigma2] : [0, 1];
+            
+            return {
+                singularValues: [sigma1, sigma2],
+                V: [v1, v2],  // Right singular vectors
+                U: [u1, u2]   // Left singular vectors
+            };
+        }
+        
+        function drawGrid(ctx, color = 'rgba(200, 200, 200, 0.5)', spacing = 40) {
+            const width = ctx.canvas.width;
+            const height = ctx.canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            
+            // Vertical lines
+            for (let x = centerX % spacing; x < width; x += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = centerY % spacing; y < height; y += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawAxes(ctx) {
+            const width = ctx.canvas.width;
+            const height = ctx.canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 2;
+            
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+        }
+        
+        function drawUnitCircle(ctx, animated = false) {
+            const centerX = ctx.canvas.width / 2;
+            const centerY = ctx.canvas.height / 2;
+            const radius = 80;
+            
+            ctx.strokeStyle = animated ? 
+                `hsla(${(time * 50) % 360}, 70%, 50%, 0.8)` : '#f39c12';
+            ctx.lineWidth = 3;
+            ctx.setLineDash(animated ? [5, 5] : []);
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function transformPoint(point, matrix) {
+            return [
+                matrix[0][0] * point[0] + matrix[0][1] * point[1],
+                matrix[1][0] * point[0] + matrix[1][1] * point[1]
+            ];
+        }
+        
+        function drawTransformedCircle(ctx) {
+            const centerX = ctx.canvas.width / 2;
+            const centerY = ctx.canvas.height / 2;
+            const radius = 80;
+            const scale = 0.8; // Scale down for visibility
+            
+            ctx.strokeStyle = '#f39c12';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            for (let angle = 0; angle <= 2 * Math.PI; angle += 0.05) {
+                const originalPoint = [
+                    radius * Math.cos(angle) / 100, // Normalize
+                    radius * Math.sin(angle) / 100
+                ];
+                
+                const transformed = transformPoint(originalPoint, subMatrix);
+                const x = centerX + transformed[0] * scale * 100;
+                const y = centerY - transformed[1] * scale * 100; // Flip Y for screen coordinates
+                
+                if (angle === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        }
+        
+        function drawArrow(ctx, startX, startY, endX, endY, color = '#e74c3c', width = 3) {
+            const headLength = 15;
+            const angle = Math.atan2(endY - startY, endX - startX);
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            
+            // Draw arrow body
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            
+            // Draw arrow head
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - headLength * Math.cos(angle - Math.PI / 6),
+                endY - headLength * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - headLength * Math.cos(angle + Math.PI / 6),
+                endY - headLength * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.stroke();
+        }
+        
+        function drawSingularVectors(svd) {
+            if (!svd) return;
+            
+            const centerX = originalCanvas.width / 2;
+            const centerY = originalCanvas.height / 2;
+            const scale = 80 * arrowScale;
+            
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+            
+            // Clear canvases
+            originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+            transformedCtx.clearRect(0, 0, transformedCanvas.width, transformedCanvas.height);
+            
+            // Draw backgrounds
+            [originalCtx, transformedCtx].forEach(ctx => {
+                drawGrid(ctx);
+                drawAxes(ctx);
+            });
+            
+            // Original space: Right singular vectors (V)
+            drawUnitCircle(originalCtx, animationRunning);
+            svd.V.forEach((vector, i) => {
+                if (svd.singularValues[i] > 1e-10) {
+                    const length = Math.log(1 + svd.singularValues[i]) * scale * 0.3;
+                    const endX = centerX + vector[0] * length;
+                    const endY = centerY - vector[1] * length;
+                    
+                    drawArrow(originalCtx, centerX, centerY, endX, endY, colors[i], 4);
+                    
+                    // Label
+                    originalCtx.fillStyle = colors[i];
+                    originalCtx.font = 'bold 12px Arial';
+                    originalCtx.fillText(`v${i+1}`, endX + 10, endY - 10);
+                }
+            });
+            
+            // Transformed space: Left singular vectors (U) and transformed circle
+            drawTransformedCircle(transformedCtx);
+            const transformedCenterX = transformedCanvas.width / 2;
+            const transformedCenterY = transformedCanvas.height / 2;
+            
+            svd.U.forEach((vector, i) => {
+                if (svd.singularValues[i] > 1e-10) {
+                    const length = svd.singularValues[i] * scale * 0.8;
+                    const endX = transformedCenterX + vector[0] * length;
+                    const endY = transformedCenterY - vector[1] * length;
+                    
+                    drawArrow(transformedCtx, transformedCenterX, transformedCenterY, 
+                             endX, endY, colors[i], 4);
+                    
+                    // Label
+                    transformedCtx.fillStyle = colors[i];
+                    transformedCtx.font = 'bold 12px Arial';
+                    transformedCtx.fillText(`u${i+1}`, endX + 10, endY - 10);
+                }
+            });
+        }
+        
+        function updateInfo(svd) {
+            if (!svd) return;
+            
+            const svdInfo = document.getElementById('svdInfo');
+            const analysisInfo = document.getElementById('analysisInfo');
+            
+            const conditionNumber = svd.singularValues[0] / (svd.singularValues[1] || 1e-10);
+            const determinant = subMatrix[0][0] * subMatrix[1][1] - subMatrix[0][1] * subMatrix[1][0];
+            
+            svdInfo.innerHTML = `
+                <p><strong>Singular Values:</strong></p>
+                <p>σ₁ = ${svd.singularValues[0].toFixed(3)}</p>
+                <p>σ₂ = ${svd.singularValues[1].toFixed(3)}</p>
+                <p><strong>Condition Number:</strong> ${conditionNumber.toFixed(2)}</p>
+                <p><strong>Matrix Rank:</strong> ${svd.singularValues.filter(s => s > 1e-10).length}</p>
+            `;
+            
+            const stability = svd.singularValues[0] > 1 ? 'Expanding' : 
+                             svd.singularValues[0] < 1 ? 'Contracting' : 'Preserving';
+            
+            analysisInfo.innerHTML = `
+                <p><strong>Determinant:</strong> ${determinant.toFixed(3)}</p>
+                <p><strong>Area Scaling:</strong> ${Math.abs(determinant).toFixed(3)}×</p>
+                <p><strong>Primary Direction:</strong> ${stability}</p>
+                <p><strong>Conditioning:</strong> ${conditionNumber > 10 ? 'Ill-conditioned' : 'Well-conditioned'}</p>
+                <p><strong>Orientation:</strong> ${determinant > 0 ? 'Preserved' : 'Reversed'}</p>
+            `;
+        }
+        
+        function animate() {
+            if (animationRunning) {
+                time += 0.02 * animationSpeed;
+            }
+            
+            const svd = calculateSVD2x2(subMatrix);
+            drawSingularVectors(svd);
+            updateInfo(svd);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function toggleAnimation() {
+            animationRunning = !animationRunning;
+        }
+        
+        function resetView() {
+            time = 0;
+            animationRunning = true;
+            document.getElementById('speedSlider').value = 1;
+            document.getElementById('scaleSlider').value = 1;
+            animationSpeed = 1;
+            arrowScale = 1;
+            updateSliderDisplays();
+        }
+        
+        function updateSliderDisplays() {
+            document.getElementById('speedValue').textContent = animationSpeed.toFixed(1) + 'x';
+            document.getElementById('scaleValue').textContent = arrowScale.toFixed(1) + 'x';
+        }
+        
+        // Event listeners
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            updateSliderDisplays();
+        });
+        
+        document.getElementById('scaleSlider').addEventListener('input', (e) => {
+            arrowScale = parseFloat(e.target.value);
+            updateSliderDisplays();
+        });
+        
+        // Initialize
+        updateSliderDisplays();
+        animate();
+    </script>
+</body>
+</html>
+
