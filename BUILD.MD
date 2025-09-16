@@ -149,6 +149,16 @@
 - Development machines meeting or exceeding system requirements
 - Testing devices with various specifications (including minimum requirements)
 - Server for build automation and testing
+- Device Name	DRACONIA
+Processor	Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz   2.50 GHz
+Installed RAM	24.0 GB (23.9 GB usable)
+Storage	477 GB SSD Samsung 512GB
+Graphics Card	Intel(R) HD Graphics 520 (128 MB)
+Device ID	795111E4-EFAF-4451-B633-84687B9E2BAB
+Product ID	00330-50644-51200-AAOEM
+System Type	64-bit operating system, x64-based processor
+Pen and touch	No pen or touch input is available for this display
+
 
 ### 2.3 Software Requirements
 - Version control system (Git)
@@ -216,3 +226,216 @@
 - Integration with popular data analysis platforms
 
 This build plan provides a structured approach to developing the Universal Matrix Visualizer, breaking down the complex project into manageable phases with clear objectives and deliverables. The plan accounts for technical challenges, resource requirements, and risk mitigation strategies to ensure successful project completion.
+
+
+
+# Universal Matrix Visualizer - CPU-Based Build Plan with 20 Checkpoints
+
+Based on the BUILD.MD document, reference code, and your requirements, here's an updated step-by-step build plan that ensures all visualizations are CPU-based and properly references your provided code examples.
+
+## Phase 1: Foundation Setup (Checkpoints 1-4)
+
+### Checkpoint 1: Project Initialization
+- Set up Git repository with branching strategy
+- Create directory structure as specified in Technical Architecture
+- Configure build tools (Rust, wasm-pack)
+- Set up development environment and testing framework
+- **Deliverable**: Initialized project repository with proper structure
+
+### Checkpoint 2: Core Infrastructure Setup
+- Implement basic application shell (index.html, main.js, styles.css)
+- Create matrix data structures (matrix_structs.js)
+- Implement basic matrix loader for CSV format
+- Set up Canvas2D rendering context
+- **Deliverable**: Functional application shell with matrix loading capability
+
+### Checkpoint 3: Advanced UI Framework with Multi-Matrix Support
+- Implement main layout with scrollable visualization area (Desmos-like)
+- Create tabbed interface for multiple matrices
+- Design expandable matrix input area with syntax highlighting
+- Set up responsive design framework for various screen sizes
+- **Reference**: Adapt UI structure from the Multi-Matrix Spy Plot example
+- **Deliverable**: UI framework supporting multiple matrices with scrollable visualizations
+
+### Checkpoint 4: Matrix Import/Export System
+- Implement CSV, JSON, and MTX format importers
+- Create export functionality for matrices in multiple formats
+- Add drag-and-drop support for matrix files
+- Implement matrix validation and error handling
+- **Reference**: Extend matrix parsing functionality from the Multi-Matrix Spy Plot example
+- **Deliverable**: Complete matrix import/export system with validation
+
+## Phase 2: Core Visualization Development (Checkpoints 5-10)
+
+### Checkpoint 5: Spy Plot Implementation with Export
+- Create spy_renderer.js with scatter plot functionality
+- Implement zoom/pan controls
+- Add sparsity statistics display
+- Implement PNG and SVG export for spy plots
+- **Reference**: Directly implement based on the Multi-Matrix Spy Plot example using Chart.js
+- **CPU-Based**: Chart.js renders entirely on CPU using Canvas2D
+- **Deliverable**: Functional Spy Plot with export capabilities
+
+### Checkpoint 6: 3D Surface Plot Implementation with 3D Export
+- Develop CPU-based 3D surface rendering system
+- Implement surface rendering with flat shading
+- Add interactive rotation controls
+- Implement Z-axis scaling and level-of-detail rendering
+- Add 3D model export (OBJ/GLTF format)
+- **Reference**: Adapt from the 3D Matrix Surface Visualizer example using Plotly.js
+- **CPU-Based**: Plotly.js performs all 3D calculations and rendering on CPU
+- **Deliverable**: Functional 3D Surface Plot with 3D model export
+
+### Checkpoint 7: Hinton Diagram Implementation
+- Create hinton_renderer.js with grid-based rendering
+- Implement value-to-size and sign-to-position mapping
+- Add interactive tooltips
+- Implement PNG and SVG export for Hinton diagrams
+- **Reference**: Directly implement based on the Hinton Diagram example using p5.js
+- **CPU-Based**: p5.js renders entirely on CPU using Canvas2D
+- **Deliverable**: Functional Hinton Diagram with export capabilities
+
+### Checkpoint 8: Bar and Line Charts Implementation
+- Develop chart_renderer.js with Canvas2D implementation
+- Implement bar charts for eigenvalue/singular value spectra
+- Create line plots for row/column comparison
+- Add sorting and statistical overlay features
+- Implement PNG and SVG export for charts
+- **Reference**: Adapt from the Singular Value Spectrum example using Chart.js and numeric.js
+- **CPU-Based**: Chart.js renders entirely on CPU using Canvas2D
+- **Deliverable**: Functional Bar and Line Charts with export capabilities
+
+### Checkpoint 9: Matrix Operations and Inspector
+- Implement transpose, normalization, and downsampling
+- Create submatrix extraction functionality
+- Add matrix inspector with value display and editing
+- Implement matrix comparison tools
+- **Reference**: Extend matrix parsing functionality from the Multi-Matrix Spy Plot example
+- **Deliverable**: Complete matrix operations toolkit with inspector
+
+### Checkpoint 10: Visualization Management System
+- Create system to display multiple visualization types in scrollable view
+- Implement visualization selection based on matrix properties
+- Add visualization comparison tools
+- Implement visualization history and navigation
+- **Reference**: Combine UI patterns from all provided examples
+- **Deliverable**: Complete visualization management system with Desmos-like interface
+
+## Phase 3: Advanced Visualization Development (Checkpoints 11-14)
+
+### Checkpoint 11: Glyph Plot Implementation
+- Develop glyph_renderer.js with shape-based encoding
+- Implement multiple glyph types (circles, squares, triangles)
+- Add size and color mapping for values
+- Implement interactive glyph selection
+- Add PNG and SVG export for glyph plots
+- **Reference**: Adapt rendering techniques from the Hinton Diagram example using p5.js
+- **CPU-Based**: p5.js renders entirely on CPU using Canvas2D
+- **Deliverable**: Functional Glyph Plot visualization with export
+
+### Checkpoint 12: Network Graph Implementation
+- Create network_renderer.js with force-directed layout
+- Implement node-link representation of matrix structure
+- Add clustering and community detection
+- Implement interactive network exploration
+- Add PNG and SVG export for network graphs
+- **Reference**: Adapt Canvas2D rendering techniques from the Eigenvector/SVD Visualization example
+- **CPU-Based**: Custom Canvas2D rendering performs all calculations on CPU
+- **Deliverable**: Functional Network Graph visualization with export
+
+### Checkpoint 13: Eigenvector/SVD Visualization Implementation
+- Develop eigenvector_renderer.js
+- Implement eigenvector visualization
+- Add SVD decomposition visualization
+- Create interactive component selection
+- Add PNG and SVG export for eigenvector visualizations
+- **Reference**: Directly implement based on the Matrix Eigenvector/SVD Visualization example
+- **CPU-Based**: Custom Canvas2D rendering performs all calculations on CPU
+- **Deliverable**: Functional Eigenvector/SVD visualization with export
+
+### Checkpoint 14: Enhanced Data Handling for Large Matrices
+- Implement streaming parsers for large matrix files
+- Create Web Workers for computation offloading
+- Implement memory-efficient data structures optimized for 24GB RAM
+- Add progressive loading and rendering for large matrices
+- Implement matrix compression for storage and transfer
+- **Reference**: Extend matrix parsing functionality from the Multi-Matrix Spy Plot example
+- **CPU-Based**: All processing occurs on CPU with Web Workers for parallelization
+- **Deliverable**: Enhanced data handling system supporting large matrices
+
+## Phase 4: Integration and Optimization (Checkpoints 15-18)
+
+### Checkpoint 15: Feature Integration
+- Integrate all visualization modes into main application
+- Implement unified control panel with matrix switching
+- Add consistent interaction patterns across modes
+- Implement keyboard shortcuts and gesture controls
+- **Reference**: Combine UI patterns from all provided examples
+- **CPU-Based**: Ensure all integrated components use CPU-based rendering
+- **Deliverable**: Fully integrated application with all visualization modes
+
+### Checkpoint 16: Performance Optimization for Target Hardware
+- Optimize rendering pipelines for Intel HD Graphics 520
+- Implement level-of-detail rendering for large matrices
+- Optimize memory usage for 24GB RAM system
+- Add frame caching for static views
+- Implement tiled rendering for large matrices
+- **Reference**: Apply optimization techniques from all provided examples
+- **CPU-Based**: All optimizations focus on CPU performance with minimal GPU usage
+- **Deliverable**: Performance-optimized application for target hardware
+
+### Checkpoint 17: Advanced Export and Sharing System
+- Implement batch export for all visualization types
+- Create visualization gallery with export options
+- Add sharing functionality for matrices and visualizations
+- Implement export presets and custom settings
+- Add 3D model viewer integration for exported 3D visualizations
+- **Reference**: Extend export functionality from all provided examples
+- **CPU-Based**: All export processing occurs on CPU
+- **Deliverable**: Complete export and sharing system with multiple format support
+
+### Checkpoint 18: UI Polish and Advanced Features
+- Finalize responsive design across all screen sizes
+- Implement dark mode and theme customization
+- Add visualization templates and presets
+- Implement collaborative features for matrix sharing
+- Create comprehensive help system with tutorials
+- **Reference**: Refine UI patterns from all provided examples
+- **CPU-Based**: Ensure all UI features use CPU-based rendering
+- **Deliverable**: Polished UI with advanced features and help system
+
+## Phase 5: Testing and Deployment (Checkpoints 19-20)
+
+### Checkpoint 19: Quality Assurance
+- Implement automated testing framework
+- Perform compatibility testing across target browsers
+- Conduct performance testing on target hardware (Intel i5-6300U)
+- Test with various matrix sizes and formats (including edge cases)
+- Test import/export functionality with all supported formats
+- **Reference**: Test all visualization types based on the provided examples
+- **CPU-Based**: Verify all visualizations perform well on CPU-only rendering
+- **Deliverable**: Comprehensive test results and performance metrics
+
+### Checkpoint 20: Finalization and Deployment
+- Address critical and high-priority bugs
+- Optimize based on testing feedback
+- Finalize documentation and help resources
+- Prepare deployment package with installation wizard
+- Create demo matrices and visualization examples
+- **Reference**: Package all visualization types based on the provided examples
+- **CPU-Based**: Ensure final application performs optimally on target hardware
+- **Deliverable**: Deployment-ready "Desmos for Matrices" application
+
+## CPU-Based Implementation Details
+
+All visualizations in this build plan are explicitly CPU-based to ensure compatibility with your Intel HD Graphics 520 hardware:
+
+1. **Spy Plot**: Uses Chart.js with Canvas2D rendering (CPU-based)
+2. **3D Surface Plot**: Uses Plotly.js with CPU-based 3D calculations and rendering
+3. **Hinton Diagram**: Uses p5.js with Canvas2D rendering (CPU-based)
+4. **Bar and Line Charts**: Uses Chart.js with Canvas2D rendering (CPU-based)
+5. **Eigenvector/SVD Visualization**: Uses custom Canvas2D rendering (CPU-based)
+6. **Additional Visualizations**: Will implement using similar CPU-based approaches
+
+The reference code examples provided demonstrate effective CPU-based implementations that will serve as the foundation for each visualization type, ensuring optimal performance on your hardware while providing rich, interactive visualizations.
+
